@@ -3,13 +3,19 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 contract CrowdFunding{
-    string public id;
-    string public name;
-    string public description;
-    address payable public author;
-    uint  public  state = 1;
-    uint public funds;
-    uint public fundraisingGoal;
+    
+    struct Project{
+        string id;
+        string name;
+        string description;
+        address payable author;
+        uint state;
+        uint funds;
+        uint fundraisingGoal;
+    }
+
+    Project public project;
+
 
     event ProjectFunded(
         string projectId,
@@ -22,16 +28,14 @@ contract CrowdFunding{
     );
 
     constructor(string memory _id, string memory _name, string memory _description, uint _fundraisingGoal){
-        id = _id;
-        name = _name;
-        description = _description;
-        fundraisingGoal = _fundraisingGoal;
-        author = payable(msg.sender);
+        
+        project = Project(_id, _name, _description, payable(msg.sender), 0, 0, _fundraisingGoal);
+
     }
 
     modifier isAuthor(){
         require(
-            msg.sender == author,
+            msg.sender == project.author,
             "No eres el autor del projecto."
         );
         _;
@@ -39,7 +43,7 @@ contract CrowdFunding{
 
     modifier isNotAuthor(){
         require(
-            msg.sender != author,
+            msg.sender != project.author,
             "No puedes transferirte a vos mismo."
         );
         _;
@@ -47,19 +51,19 @@ contract CrowdFunding{
 
     function fundProject() public payable isNotAuthor{
 
-        require(state != 1, "El projecto ya no recibe fondos.");
+        require(project.state != 1, "El projecto ya no recibe fondos.");
         require(msg.value > 0, "Los fondos invertidos deben ser mayor a 0.");
 
-        author.transfer(msg.value);
-        funds += msg.value;
-        emit ProjectFunded(id, msg.value);
+        project.author.transfer(msg.value);
+        project.funds += msg.value;
+        emit ProjectFunded(project.id, msg.value);
     }
 
     function changeProjectState(uint newState) public isAuthor{
 
-        require(state != newState, "El projecto ya se encuentra en ese estado.");
+        require(project.state != newState, "El projecto ya se encuentra en ese estado.");
 
-        state = newState;
-        emit ProjectStateChanged(id, newState);
+        project.state = newState;
+        emit ProjectStateChanged(project.id, newState);
     }
 }
